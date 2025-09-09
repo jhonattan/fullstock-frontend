@@ -21,13 +21,11 @@ export async function sendMessage(
   sessionCartId?: string
 ) {
   if (!chats[sessionId]) {
-    // Obtener datos de la base de datos
     const [categories, products] = await Promise.all([
       getAllCategoriesWithVariants(),
       getAllProducts(),
     ]);
 
-    // Obtener carrito del usuario si está disponible
     let userCart = null;
     if (userId || sessionCartId) {
       try {

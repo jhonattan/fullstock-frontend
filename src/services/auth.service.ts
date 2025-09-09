@@ -31,29 +31,6 @@ export async function getCurrentUser(
   }
 }
 
-// export async function login(
-//   request: Request,
-//   email: string,
-//   password: string
-// ): Promise<AuthResponse> {
-//   const data = await serverClient<AuthResponse>("/auth/login", request, {
-//     body: { email, password },
-//   });
-//   return data;
-// }
-
-// export async function signup(
-//   request: Request,
-//   email: string,
-//   password: string
-// ): Promise<AuthResponse> {
-//   const data = await serverClient<AuthResponse>("/auth/signup", request, {
-//     body: { email, password },
-//   });
-
-//   return data;
-// }
-
 export async function requireUser(
   request: Request,
   redirectTo: string = "/login"

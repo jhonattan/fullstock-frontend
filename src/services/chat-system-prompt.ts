@@ -1,12 +1,4 @@
-import type { CartWithItems } from "@/models/cart.model";
-import type { Product } from "@/models/product.model";
-import type { CategoryWithVariantsInfo } from "@/services/category.service";
-
-interface SystemPromptConfig {
-  categories: CategoryWithVariantsInfo[];
-  products: Product[];
-  userCart?: CartWithItems | null;
-}
+import type { SystemPromptConfig } from "@/models/chat.model";
 
 export function generateSystemPrompt({
   categories,

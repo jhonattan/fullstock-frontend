@@ -1,8 +1,23 @@
-import type { CategorySlug } from "../generated/prisma/client";
+import type {
+  CategorySlug,
+  Category as PrismaCategory,
+  CategoryVariant as PrismaCategoryVariant,
+  Product as PrismaProduct,
+} from "../generated/prisma/client";
 
 const imagesBaseUrl = "https://fullstock-images.s3.us-east-2.amazonaws.com";
 
-export const categories = [
+export type Category = Omit<PrismaCategory, "id" | "createdAt" | "updatedAt">;
+export type CategoryVariant = Omit<
+  PrismaCategoryVariant,
+  "id" | "createdAt" | "updatedAt" | "priceModifier"
+> & { priceModifier: number };
+export type Product = Omit<
+  PrismaProduct,
+  "id" | "alt" | "createdAt" | "updatedAt" | "price"
+> & { price: number };
+
+export const categories: Category[] = [
   {
     title: "Polos",
     slug: "polos" as CategorySlug,
@@ -10,7 +25,7 @@ export const categories = [
     alt: "Hombre luciendo polo azul",
     description:
       "Polos exclusivos con diseños que todo desarrollador querrá lucir. Ideales para llevar el código a donde vayas.",
-    hasVariants: true, // Los polos tienen variantes de talla
+    hasVariants: true,
   },
   {
     title: "Tazas",
@@ -19,7 +34,7 @@ export const categories = [
     alt: "Tazas con diseño de código",
     description:
       "Tazas que combinan perfectamente con tu café matutino y tu pasión por la programación. ¡Empieza el día con estilo!",
-    hasVariants: false, // Las tazas NO tienen variantes
+    hasVariants: false,
   },
   {
     title: "Stickers",
@@ -28,13 +43,11 @@ export const categories = [
     alt: "Stickers de desarrollo web",
     description:
       "Personaliza tu espacio de trabajo con nuestros stickers únicos y muestra tu amor por el desarrollo web.",
-    hasVariants: true, // Los stickers tienen variantes de tamaño
+    hasVariants: true,
   },
 ];
 
-// Variantes por categoría
-export const categoryVariants = [
-  // Variantes para Polos (categoryId: 1) - sin modificador de precio
+export const categoryVariants: CategoryVariant[] = [
   { categoryId: 1, value: "small", label: "S", priceModifier: 0, sortOrder: 1 },
   {
     categoryId: 1,
@@ -44,8 +57,6 @@ export const categoryVariants = [
     sortOrder: 2,
   },
   { categoryId: 1, value: "large", label: "L", priceModifier: 0, sortOrder: 3 },
-
-  // Variantes para Stickers (categoryId: 3) - con modificador de precio
   {
     categoryId: 3,
     value: "3x3",
@@ -69,7 +80,7 @@ export const categoryVariants = [
   },
 ];
 
-export const products = [
+export const products: Product[] = [
   {
     title: "Polo React",
     imgSrc: `${imagesBaseUrl}/polos/polo-react.png`,
