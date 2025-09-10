@@ -25,44 +25,44 @@ export function removeToken(): void {
   localStorage.removeItem(TOKEN_KEY);
 }
 
-export async function client<T>(
-  endpoint: string,
-  { body, headers: customHeaders, ...customConfig }: RequestConfig = {}
-) {
-  const token = getToken();
+// export async function client<T>(
+//   endpoint: string,
+//   { body, headers: customHeaders, ...customConfig }: RequestConfig = {}
+// ) {
+//   const token = getToken();
 
-  const config: RequestInit = {
-    method: body ? "POST" : "GET",
-    body: body ? JSON.stringify(body) : undefined,
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: token ? `Bearer ${token}` : "",
-      ...customHeaders,
-    },
-    ...customConfig,
-  };
+//   const config: RequestInit = {
+//     method: body ? "POST" : "GET",
+//     body: body ? JSON.stringify(body) : undefined,
+//     headers: {
+//       "Content-Type": "application/json",
+//       Authorization: token ? `Bearer ${token}` : "",
+//       ...customHeaders,
+//     },
+//     ...customConfig,
+//   };
 
-  try {
-    const response = await fetch(API_URL + endpoint, config);
-    const data = await response.json();
+//   try {
+//     const response = await fetch(API_URL + endpoint, config);
+//     const data = await response.json();
 
-    if (response.ok) {
-      return data as T;
-    }
+//     if (response.ok) {
+//       return data as T;
+//     }
 
-    if (response.status === 401 && token) {
-      removeToken();
-      // window.location.assign(window.location.pathname);
-      window.location.assign("/login");
-    }
+//     if (response.status === 401 && token) {
+//       removeToken();
+//       window.location.assign(window.location.pathname);
+//       window.location.assign("/login");
+//     }
 
-    if (isApiError(data)) throw new Error(data.error.message);
-    throw new Error("Unknown error");
-  } catch (error) {
-    console.error(error);
-    throw error;
-  }
-}
+//     if (isApiError(data)) throw new Error(data.error.message);
+//     throw new Error("Unknown error");
+//   } catch (error) {
+//     console.error(error);
+//     throw error;
+//   }
+// }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function debounceAsync<T extends (...args: any[]) => Promise<any>>(
