@@ -17,7 +17,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 
     return { orders };
   } catch {
-    return {};
+    return { orders: undefined };
   }
 }
 
@@ -26,9 +26,11 @@ export default function Orders({ loaderData }: Route.ComponentProps) {
 
   return (
     <div>
-      {orders!.length > 0 ? (
+      {orders == undefined ? (
+        <p className="text-muted-foreground">Hubo un error en traer pedidos.</p>
+      ) : orders.length > 0 ? (
         <div className="flex flex-col gap-4">
-          {orders!.map((order) => (
+          {orders.map((order) => (
             <div key={order.id}>
               <div className="rounded-lg bg-muted py-4 px-6">
                 <dl className="flex flex-col gap-4 w-full sm:flex-row">

@@ -2,7 +2,7 @@ import type {
   Order as PrismaOrder,
   OrderItem as PrismaOrderItem,
 } from "@/../generated/prisma/client";
-import type { Nullable } from "./utils.model";
+import type { Maybe, Nullable } from "./utils.model";
 
 export type OrderDetails = Pick<
   PrismaOrder,
@@ -33,7 +33,7 @@ export interface OrderItemInput {
   categoryVariantId?: Nullable<number>;
   quantity: number;
   title: string;
-  variantInfo?: Nullable<string>;
+  variantInfo: Maybe<string>;
   price: number;
   imgSrc: string;
 }

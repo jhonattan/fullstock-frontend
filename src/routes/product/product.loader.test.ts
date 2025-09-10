@@ -32,48 +32,47 @@ describe("Product loader", () => {
   it("returns a product when it exists", async () => {
     const mockProduct = createTestProduct({ categoryId: 1 });
 
-    const mockCategoryWithVariants: categoryService.CategoryWithVariantsTransformed =
-      {
-        id: 1,
-        title: "Test Category",
-        slug: "polos" as CategorySlug,
-        hasVariants: true,
-        description: "Test category description",
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        categoryVariants: [
-          {
-            id: 1,
-            value: "small",
-            label: "S",
-            priceModifier: 0, // ← CORREGIDO: number en lugar de Decimal
-            categoryId: 1,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-            sortOrder: 1,
-          },
-          {
-            id: 2,
-            value: "medium",
-            label: "M",
-            priceModifier: 2, // ← CORREGIDO: number en lugar de Decimal
-            categoryId: 1,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-            sortOrder: 2,
-          },
-          {
-            id: 3,
-            value: "large",
-            label: "L",
-            priceModifier: 3, // ← CORREGIDO: number en lugar de Decimal
-            categoryId: 1,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-            sortOrder: 3,
-          },
-        ],
-      };
+    const mockCategoryWithVariants = {
+      id: 1,
+      title: "Test Category",
+      slug: "polos" as CategorySlug,
+      hasVariants: true,
+      description: "Test category description",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      categoryVariants: [
+        {
+          id: 1,
+          value: "small",
+          label: "S",
+          priceModifier: 0,
+          categoryId: 1,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          sortOrder: 1,
+        },
+        {
+          id: 2,
+          value: "medium",
+          label: "M",
+          priceModifier: 2,
+          categoryId: 1,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          sortOrder: 2,
+        },
+        {
+          id: 3,
+          value: "large",
+          label: "L",
+          priceModifier: 3,
+          categoryId: 1,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          sortOrder: 3,
+        },
+      ],
+    };
 
     mockGetProductById.mockResolvedValue(mockProduct);
     mockGetCategoryWithVariants.mockResolvedValue(mockCategoryWithVariants);

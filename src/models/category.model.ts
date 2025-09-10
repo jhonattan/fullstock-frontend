@@ -27,26 +27,9 @@ export type CategoryWithVariantsInfo = {
     label: string;
     priceModifier: number;
     sortOrder: number;
-  }[];
-};
-
-export type CategoryWithVariantsTransformed = {
-  id: number;
-  title: string;
-  slug: CategorySlug;
-  hasVariants: boolean;
-  description: Nullable<string>;
-  createdAt: Date;
-  updatedAt: Date;
-  categoryVariants: {
-    id: number;
-    value: string;
-    label: string;
-    priceModifier: number;
-    categoryId: number;
-    sortOrder: number;
-    createdAt: Date;
-    updatedAt: Date;
+    categoryId?: number;
+    createdAt?: Date;
+    updatedAt?: Date;
   }[];
 };
 

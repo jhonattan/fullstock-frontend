@@ -1,10 +1,7 @@
 import { prisma } from "@/db/prisma";
 
 import { type Category, type CategorySlug } from "@/../generated/prisma/client";
-import type {
-  CategoryWithVariantsInfo,
-  CategoryWithVariantsTransformed,
-} from "@/models/category.model";
+import type { CategoryWithVariantsInfo } from "@/models/category.model";
 
 export async function getAllCategories(): Promise<Category[]> {
   const categories = await prisma.category.findMany();
@@ -48,7 +45,7 @@ export async function getCategoryBySlug(slug: CategorySlug): Promise<Category> {
 
 export async function getCategoryWithVariants(
   categoryId: number
-): Promise<CategoryWithVariantsTransformed | null> {
+): Promise<CategoryWithVariantsInfo | null> {
   const category = await prisma.category.findUnique({
     where: { id: categoryId },
     include: {
