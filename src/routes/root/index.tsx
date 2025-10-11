@@ -72,7 +72,7 @@ export async function loader({ request }: Route.LoaderArgs) {
     cart?.items.reduce((total, item) => total + item.quantity, 0) || 0;
 
   // Preparar datos de respuesta según estado de autenticación
-  const responseData = user ? { user, totalItems } : { totalItems };
+  const responseData = user ? { user, totalItems, sessionCartId } : { totalItems, sessionCartId };
 
   return data(responseData, {
     headers: {
@@ -83,7 +83,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 }
 
 export default function Root({ loaderData }: Route.ComponentProps) {
-  const { totalItems, user } = loaderData;
+  const { totalItems, user, sessionCartId } = loaderData;
 
   const location = useLocation();
   const fetcher = useFetcher();
@@ -189,7 +189,10 @@ export default function Root({ loaderData }: Route.ComponentProps) {
         </Container>
       </footer>
       <div className="fixed bottom-4 right-4">
-        <ChatBot />
+        <ChatBot 
+         userId={user?.id}
+        sessionCartId={sessionCartId}
+        />
       </div>
       <ScrollRestoration />
     </div>

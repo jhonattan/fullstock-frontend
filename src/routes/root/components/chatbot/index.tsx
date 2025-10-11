@@ -4,7 +4,12 @@ import { Link } from "react-router";
 
 import { Button, Input } from "@/components/ui";
 
-export function ChatBot() {
+type ChatBotProps = {
+  userId?: number;
+  sessionCartId?: string;
+};
+
+export function ChatBot({ userId, sessionCartId }: ChatBotProps) {
   const [messages, setMessages] = useState<string[]>([
     "🤖: Hola! En que puedo ayudarte?",
   ]);
@@ -27,20 +32,37 @@ export function ChatBot() {
     e.preventDefault();
     setInput("");
     setMessages((prev) => [...prev, `👤: ${input}`]);
-
     setLoading(true);
-    const response = await fetch("/chat", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ message: input, sessionid }),
-    });
 
-    const { message } = await response.json();
+    try {
+      const response = await fetch("http://localhost:4000/api/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          chatId: sessionid,
+          content: input,
+          userId,
+          sessionCartId,
+        }),
+      });
 
-    setMessages((prev) => [...prev, `🤖: ${message}`]);
-    setLoading(false);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      console.log("response:", response);
+      const message = await response.json();
+      console.log("Response from microservice:", message);
+
+      setMessages((prev) => [...prev, `🤖: ${message.content || message}`]);
+    } catch (error) {
+      console.error("Error calling microservice:", error);
+      setMessages((prev) => [...prev, `🤖: Error: Could not get response`]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
