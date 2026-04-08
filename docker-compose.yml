@@ -7,9 +7,23 @@ services:
       - "80:3000"
     environment:
       DATABASE_URL: postgresql://postgres:letmein@db:5432/postgres?schema=public
+      DB_HOST: db
+      DB_NAME: postgres
+      DB_USER: postgres
+      DB_PASSWORD: letmein
+      NODE_ENV: production
+      LOG_LEVEL: debug
+      CULQI_PRIVATE_KEY: ${CULQI_PRIVATE_KEY} # Add this line
+      VITE_CULQI_PUBLIC_KEY: ${VITE_CULQI_PUBLIC_KEY} # Add this too if needed
     depends_on:
       db:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   db:
     image: postgres:alpine

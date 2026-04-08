@@ -5,7 +5,7 @@ import type {
   Product as PrismaProduct,
 } from "../generated/prisma/client";
 
-const imagesBaseUrl = "https://fullstock-images.s3.us-east-2.amazonaws.com";
+const imagesBaseUrl = "/images";
 
 export type Category = Omit<PrismaCategory, "id" | "createdAt" | "updatedAt">;
 export type CategoryVariant = Omit<

@@ -1,5 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { X } from "lucide-react";
+import { X } from "@/components/icons/lucide";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { redirect, useNavigation, useSubmit } from "react-router";
@@ -27,6 +27,7 @@ import { createOrder } from "@/services/order.service";
 import { commitSession, getSession } from "@/session.server";
 
 import type { Route } from "./+types";
+import { logger } from "@/utils/logger";
 
 const countryOptions = [
   { value: "AR", label: "Argentina" },
@@ -68,14 +69,24 @@ export const CheckoutFormSchema = z.object({
 type CheckoutForm = z.infer<typeof CheckoutFormSchema>;
 
 export async function action({ request }: Route.ActionArgs) {
+  logger.info("Payment processing started");
+
   const formData = await request.formData();
   const shippingDetails = JSON.parse(
-    formData.get("shippingDetailsJson") as string
+    formData.get("shippingDetailsJson") as string,
   ) as CheckoutForm;
   const cartItems = JSON.parse(
-    formData.get("cartItemsJson") as string
+    formData.get("cartItemsJson") as string,
   ) as CartItem[];
   const token = formData.get("token") as string;
+
+  logger.debug(
+    {
+      culqiKeyExists: !!process.env.CULQI_PRIVATE_KEY,
+      keyPrefix: process.env.CULQI_PRIVATE_KEY?.substring(0, 10),
+    },
+    "CULQI credentials check",
+  );
 
   const total = Math.round(calculateTotal(cartItems) * 100);
 
@@ -87,52 +98,97 @@ export async function action({ request }: Route.ActionArgs) {
     capture: true,
   };
 
-  const response = await fetch("https://api.culqi.com/v2/charges", {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      Authorization: `Bearer ${process.env.CULQI_PRIVATE_KEY}`,
-    },
-    body: JSON.stringify(body),
-  });
+  logger.info({ body }, "Calling Culqi API");
 
-  if (!response.ok) {
-    const errorData = (await response.json()) as CulqiChargeError;
-    console.error("Error creating charge:", errorData);
-    return { error: errorData.user_message || "Error processing payment" };
+  try {
+    const response = await fetch("https://api.culqi.com/v2/charges", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        Authorization: `Bearer ${process.env.CULQI_PRIVATE_KEY}`,
+      },
+      body: JSON.stringify(body),
+    });
+
+    logger.info(
+      {
+        status: response.status,
+        headers: Object.fromEntries(response.headers.entries()),
+      },
+      "Culqi response received",
+    );
+
+    const responseText = await response.text();
+    logger.debug({ responseText }, "Culqi raw response");
+
+    if (!response.ok) {
+      let errorData: CulqiChargeError;
+      try {
+        errorData = JSON.parse(responseText) as CulqiChargeError;
+      } catch {
+        errorData = {
+          object: "error",
+          type: "api_error",
+          merchant_message: responseText,
+          user_message: "Error al procesar el pago",
+          charge_id: "",
+          code: "",
+          decline_code: "",
+        };
+      }
+
+      logger.error(
+        {
+          status: response.status,
+          type: errorData.type,
+          code: errorData.code,
+          merchantMessage: errorData.merchant_message,
+          userMessage: errorData.user_message,
+          fullError: errorData,
+        },
+        "Culqi API error",
+      );
+
+      return { error: errorData.user_message || "Error processing payment" };
+    }
+
+    const chargeData = JSON.parse(responseText);
+    logger.info({ chargeId: chargeData.id }, "Charge successful");
+
+    const items = cartItems.map((item) => ({
+      productId: item.product.id,
+      categoryVariantId: item.categoryVariantId,
+      quantity: item.quantity,
+      title: item.product.title,
+      variantInfo: item.categoryVariant
+        ? getVariantInfoText(item.categoryVariant)
+        : null,
+      price: item.finalPrice,
+      imgSrc: item.product.imgSrc,
+    }));
+
+    const { id: orderId } = await createOrder(
+      items,
+      // @ts-expect-error Arreglar el tipo de shippingDetails
+      shippingDetails,
+      chargeData.id,
+    );
+
+    await deleteRemoteCart(request);
+    const session = await getSession(request.headers.get("Cookie"));
+    session.unset("sessionCartId");
+
+    logger.info({ orderId }, "Order created, redirecting");
+
+    return redirect(`/order-confirmation/${orderId}`, {
+      headers: {
+        "Set-Cookie": await commitSession(session),
+      },
+    });
+  } catch (error) {
+    logger.error({ error }, "Exception during payment processing");
+    return { error: "Error inesperado al procesar el pago" };
   }
-
-  const chargeData = await response.json();
-
-  const items = cartItems.map((item) => ({
-    productId: item.product.id,
-    categoryVariantId: item.categoryVariantId, // ← NUEVO
-    quantity: item.quantity,
-    title: item.product.title,
-    variantInfo: item.categoryVariant
-      ? getVariantInfoText(item.categoryVariant)
-      : null,
-    price: item.finalPrice,
-    imgSrc: item.product.imgSrc,
-  }));
-
-  const { id: orderId } = await createOrder(
-    items,
-    // TODO
-    // @ts-expect-error Arreglar el tipo de shippingDetails
-    shippingDetails,
-    chargeData.id
-  );
-
-  await deleteRemoteCart(request);
-  const session = await getSession(request.headers.get("Cookie"));
-  session.unset("sessionCartId");
-
-  return redirect(`/order-confirmation/${orderId}`, {
-    headers: {
-      "Set-Cookie": await commitSession(session),
-    },
-  });
 }
 
 function getVariantInfoText(categoryVariant: CategoryVariant): string {
@@ -171,7 +227,7 @@ export default function Checkout({
   const paymentError = actionData?.error;
 
   const [culqui, setCulqui] = useState<CulqiInstance | null>(null);
-  const { CulqiCheckout } = useCulqi();
+  const { CulqiCheckout, loading: culqiLoading } = useCulqi();
 
   const {
     register,
@@ -196,7 +252,13 @@ export default function Checkout({
   });
 
   useEffect(() => {
-    if (!CulqiCheckout) return;
+    // Wait for BOTH scripts to load
+    if (!CulqiCheckout || culqiLoading) {
+      console.log("⏳ Waiting for Culqi scripts...");
+      return;
+    }
+
+    console.log("✅ Both Culqi scripts ready, initializing...");
 
     const config = {
       settings: {
@@ -204,7 +266,7 @@ export default function Checkout({
         amount: Math.round(total * 100),
       },
       client: {
-        email: user?.email,
+        email: user?.email || "test@example.com",
       },
       options: {
         paymentMethods: {
@@ -217,24 +279,39 @@ export default function Checkout({
 
     const culqiInstance = new CulqiCheckout(
       import.meta.env.VITE_CULQI_PUBLIC_KEY as string,
-      config
+      config,
     );
 
-    culqiInstance.culqi = () => {
+    culqiInstance.culqi = function () {
+      console.log("\n🔔 CLIENT: Culqi callback triggered (user clicked Pay)");
+
       if (culqiInstance.token) {
+        console.log("✅ CLIENT: Token received:", culqiInstance.token.id);
+
         const token = culqiInstance.token.id;
         culqiInstance.close();
+
         const formData = getValues();
+        console.log("📤 CLIENT: Submitting to server...");
+
         submit(
           {
             shippingDetailsJson: JSON.stringify(formData),
             cartItemsJson: JSON.stringify(cart.items),
             token,
           },
-          { method: "POST" }
+          { method: "POST" },
         );
-      } else {
-        console.log("Error : ", culqiInstance.error);
+      } else if (culqiInstance.error) {
+        console.error("❌ CLIENT: Culqi error:", culqiInstance.error);
+        const culqiError = culqiInstance.error as unknown as CulqiChargeError;
+        alert(
+          `Error: ${
+            culqiError.user_message ||
+            culqiError.merchant_message ||
+            "Error al procesar el pago"
+          }`,
+        );
       }
     };
 
@@ -245,9 +322,10 @@ export default function Checkout({
         culqiInstance.close();
       }
     };
-  }, [total, user, submit, getValues, cart.items, CulqiCheckout]);
+  }, [total, user, submit, getValues, cart.items, CulqiCheckout, culqiLoading]);
 
   async function onSubmit() {
+    console.log("🎯 CLIENT: Opening Culqi modal...");
     if (culqui) {
       culqui.open();
     }
@@ -289,7 +367,7 @@ export default function Checkout({
                       </div>
                     </div>
                   </div>
-                )
+                ),
               )}
               <div className="flex justify-between p-6 text-base font-medium">
                 <p>Total</p>
@@ -339,7 +417,6 @@ export default function Checkout({
                   error={errors.company?.message}
                   {...register("company")}
                 />
-                {errors.company?.message && <p>{errors.company?.message}</p>}
                 <InputField
                   label="Dirección"
                   autoComplete="street-address"
@@ -382,9 +459,13 @@ export default function Checkout({
             <Button
               size="xl"
               className="w-full mt-6"
-              disabled={!isValid || !CulqiCheckout || loading}
+              disabled={!isValid || culqiLoading || loading}
             >
-              {loading ? "Procesando..." : "Confirmar Orden"}
+              {culqiLoading
+                ? "Cargando..."
+                : loading
+                ? "Procesando..."
+                : "Confirmar Orden"}
             </Button>
             {paymentError && (
               <p className="text-red-500 mt-4 text-center">{paymentError}</p>

@@ -1,4 +1,4 @@
-import { Minus, Plus, Trash2 } from "lucide-react";
+import { Minus, Plus, Trash2 } from "@/components/icons/lucide";
 import { Form, Link } from "react-router";
 
 import { Button, Container, Section } from "@/components/ui";
@@ -135,7 +135,7 @@ export default function Cart({ loaderData }: Route.ComponentProps) {
                   </div>
                 </div>
               </div>
-            )
+            ),
           )}
           <div className="flex justify-between p-6 text-base font-medium border-b">
             <p>Total</p>

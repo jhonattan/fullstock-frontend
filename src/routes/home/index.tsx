@@ -1,4 +1,4 @@
-import { ServerCrash } from "lucide-react";
+import { ServerCrash } from "@/components/icons/lucide";
 import { Link } from "react-router";
 
 import { Truck, Return, Ribbon, Idea } from "@/components/icons";

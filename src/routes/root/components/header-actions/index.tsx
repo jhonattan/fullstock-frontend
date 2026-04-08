@@ -1,4 +1,4 @@
-import { ShoppingCart, User2 } from "lucide-react";
+import { ShoppingCart, User2 } from "@/components/icons/lucide";
 import { Link } from "react-router";
 
 import { Button, Separator } from "@/components/ui";
